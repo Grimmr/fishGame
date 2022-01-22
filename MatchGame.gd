@@ -11,7 +11,7 @@ var board = []
 
 enum direction {H, V}
 
-enum {CLEAR, LIFT}
+enum {CLEAR, LIFT, FILL}
 var state = CLEAR
 
 func _ready():
@@ -22,25 +22,26 @@ func _ready():
 var count = 0	
 func _process(delta):
 	count += delta
-	if count >= 2 && count <= 10:
+	if count >= 1 && count <= 10:
 		if(state == CLEAR):
 			state = LIFT
 			count = 0
 			clearAllMatches()
 		elif(state == LIFT):
 			HandleLiftPieces()
-			count = 10
+			state = FILL
+			count = 0
+		elif(state == FILL):
+			HandleFill()
+			state = CLEAR
+			count = 0
 
 func setupBoard():
 	for x in range(width):
 		board.append([])
 		for y in range(height):
-			var newWater = WaterScene.instance()
-			newWater.setType(rng.randi_range(0,3))
-			newWater.position.x = x*gridSize + .5*gridSize
-			newWater.position.y = y*gridSize + .5*gridSize
-			add_child(newWater)
-			board[x].append(newWater)
+			board[x].append(null)
+			createWater(x,y)
 
 func findMatches():
 	var out = []
@@ -83,12 +84,29 @@ func shiftColumnOne(col, start):
 		board[col][y] = null
 		if moving != null:
 			moving.moveTo(col*gridSize + .5*gridSize, (y-1)*gridSize + .5*gridSize)
-			
+
 func HandleLiftPieces():
 	for x in range(width):
 		for y in range(height-1, -1, -1):
 			if(board[x][y] == null):
 				shiftColumnOne(x, y)
+
+func createWater(x, y):
+	var newWater = WaterScene.instance()
+	newWater.setType(rng.randi_range(0,3))
+	newWater.position.x = x*gridSize + .5*gridSize
+	newWater.position.y = y*gridSize + .5*gridSize
+	add_child(newWater)
+	board[x][y] = newWater
+
+func HandleFill():
+	for x in range(width):
+		var start = false
+		for y in range(height):
+			if board[x][y] == null:
+				start = true
+			if start:
+				createWater(x,y)
 
 func remove(x, y):
 	remove_child(board[x][y])
