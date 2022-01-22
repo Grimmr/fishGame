@@ -1,0 +1,58 @@
+[gd_scene load_steps=4 format=2]
+
+[sub_resource type="GDScript" id=3]
+script/source = "extends Node2D
+
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+export var type = 0
+var sprite = null
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	setType(type)
+
+func setType(t):
+	if(sprite == null):
+		sprite = get_child(0)
+	
+	type = t
+	if(type == 0):
+		sprite.texture.gradient.set_color(0, Color(0,0,255))
+	if(type == 1):
+		sprite.texture.gradient.set_color(0, Color(0,255,0))
+	if(type == 2):
+		sprite.texture.gradient.set_color(0, Color(255,0,0))
+	if(type == 3):
+		sprite.texture.gradient.set_color(0, Color(0,255,255))
+
+func getType():
+	return type
+
+func moveTo(x, y):
+	position.x = x
+	position.y = y
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+#func _process(delta):
+#	pass
+"
+
+[sub_resource type="Gradient" id=5]
+resource_local_to_scene = true
+offsets = PoolRealArray( 0 )
+colors = PoolColorArray( 0, 0.929412, 1, 1 )
+
+[sub_resource type="GradientTexture" id=4]
+resource_local_to_scene = true
+gradient = SubResource( 5 )
+width = 40
+
+[node name="Water" type="Node2D"]
+script = SubResource( 3 )
+
+[node name="Sprite" type="Sprite" parent="."]
+scale = Vector2( 1, 40 )
+texture = SubResource( 4 )
