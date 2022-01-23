@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=2]
 
-[sub_resource type="GDScript" id=3]
+[sub_resource type="GDScript" id=1]
 script/source = "extends Node2D
 
 
@@ -10,9 +10,26 @@ script/source = "extends Node2D
 export var type = 0
 var sprite = null
 
+signal arrived
+var to
+var from
+var moving = false
+var speed = 240
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	setType(type)
+	
+func _process(delta):
+	if moving:
+		var heading = to - position
+		#if not within snap
+		if heading.length()  > speed * delta:
+			position += heading.normalized() * speed * delta
+		else:
+			position = to
+			moving = false
+			emit_signal(\"arrived\", self, from, to)
 
 func setType(t):
 	if(sprite == null):
@@ -27,32 +44,46 @@ func setType(t):
 		sprite.texture.gradient.set_color(0, Color(255,0,0))
 	if(type == 3):
 		sprite.texture.gradient.set_color(0, Color(0,255,255))
+	if(type == 4):
+		sprite.texture.gradient.set_color(0, Color(255,255,0))
 
 func getType():
 	return type
 
 func moveTo(x, y):
-	position.x = x
-	position.y = y
+	if(!moving):
+		from = Vector2(position)
+		to = Vector2(x, y)
+		moving = true
+
+func moveBy(x, y):
+	if(!moving):
+		from = Vector2(position)
+		to = position + Vector2(x, y)
+		moving = true
+
+func _to_string():
+	return \"%s\" % type
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):
 #	pass
 "
 
-[sub_resource type="Gradient" id=5]
+[sub_resource type="Gradient" id=2]
 resource_local_to_scene = true
 offsets = PoolRealArray( 0 )
 colors = PoolColorArray( 0, 0.929412, 1, 1 )
 
-[sub_resource type="GradientTexture" id=4]
+[sub_resource type="GradientTexture" id=3]
 resource_local_to_scene = true
-gradient = SubResource( 5 )
+gradient = SubResource( 2 )
 width = 40
 
 [node name="Water" type="Node2D"]
-script = SubResource( 3 )
+script = SubResource( 1 )
 
 [node name="Sprite" type="Sprite" parent="."]
+position = Vector2( 20, 20 )
 scale = Vector2( 1, 40 )
-texture = SubResource( 4 )
+texture = SubResource( 3 )
