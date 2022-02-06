@@ -2,11 +2,13 @@ extends Node2D
 
 var WaterScene = preload("res://Water.tscn")
 var rng = RandomNumberGenerator.new()
+var sound = 0
 
 export var width = 5
 export var height = 10
 var gridSize = 40 
-
+var randArray = [0,0,1,1,2,2,3,3,4,4,10]
+var cooldown = 0
 var board = []
 
 enum direction {H, V}
@@ -16,6 +18,8 @@ var dummy
 
 func _ready():
 	rng.randomize()
+	$MachineNoise.play()
+	$Radar.play()
 	dummy = WaterScene.instance()
 	dummy.setType(999)
 	setupBoard()
@@ -24,6 +28,7 @@ func _ready():
 var count = 0	
 func _process(delta):
 	HandleLiftPieces()
+	clearFish()
 	clearAllMatches()
 
 
@@ -33,6 +38,12 @@ func setupBoard():
 		for y in range(height):
 			board[x].append(null)
 			createWater(x, y, y)
+
+func clearFish():
+	for x in range(width):
+		if board[x][0] != null:
+			if board[x][0].getType() == 10:
+				remove(x,0)
 
 func findMatches():
 	var out = []
@@ -73,6 +84,16 @@ func clearAllMatches():
 		var end = m.end.y if m.type==direction.V else m.end.x
 		for v in range(start, end+1):
 			remove(m.start.x if m.type==direction.V else v, m.start.y if m.type==direction.H else v)
+		sound = randi() % 3
+		match sound:
+			0:
+				$WaterSound1.play()
+			1:
+				$WaterSound2.play()
+			2:
+				$WaterSound3.play()
+			_:
+				$WaterSound4.play()
 
 func HandleLiftPieces():
 	for x in range(width):
@@ -87,7 +108,7 @@ func HandleLiftPieces():
 
 func createWater(x, y, offset = 0):
 	var newWater = WaterScene.instance()
-	newWater.setType(rng.randi_range(0,4))
+	newWater.setType(randArray[rng.randi() % randArray.size()])
 	newWater.position.x = x*gridSize 
 	newWater.position.y = (height+offset)*gridSize
 	newWater.connect("arrived", self, "onArival")
@@ -112,6 +133,8 @@ func swapPieceRight(target):
 	#set dummies
 	board[target.x][target.y] = dummy
 	board[target.x+1][target.y] = dummy
+	if cooldown > 0:
+		cooldown -= 1
 	return true
 
 class matchData:
@@ -151,3 +174,10 @@ func _input(event):
 		print("-------------------")
 		print(board)
 		print(findMatches())
+	if event.is_action("gemGame_Remove"):
+		var target = get_local_mouse_position() / gridSize
+		if (cooldown == 0 && board[target.x][target.y] != null):
+			if board[target.x][target.y].getType() == 10:
+				remove(target.x, target.y)
+				cooldown = 10
+

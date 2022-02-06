@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/Radarpings.mp3-c9f0d83a38829c5574f1208ddb340bda.mp3str"
+
+[deps]
+
+source_file="res://Radarpings.mp3"
+dest_files=[ "res://.import/Radarpings.mp3-c9f0d83a38829c5574f1208ddb340bda.mp3str" ]
+
+[params]
+
+loop=true
+loop_offset=0

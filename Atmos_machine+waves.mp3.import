@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/Atmos_machine+waves.mp3-df437f7cfb207297e7092984bbe2eed1.mp3str"
+
+[deps]
+
+source_file="res://Atmos_machine+waves.mp3"
+dest_files=[ "res://.import/Atmos_machine+waves.mp3-df437f7cfb207297e7092984bbe2eed1.mp3str" ]
+
+[params]
+
+loop=true
+loop_offset=0

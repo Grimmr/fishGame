@@ -46,6 +46,8 @@ func setType(t):
 		sprite.texture.gradient.set_color(0, Color(0,255,255))
 	if(type == 4):
 		sprite.texture.gradient.set_color(0, Color(255,255,0))
+	if(type == 10):
+		sprite.texture.gradient.set_color(0, Color(125,125,125))
 
 func getType():
 	return type
