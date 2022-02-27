@@ -9,12 +9,16 @@ script/source = "extends Node2D
 # var b = \"text\"
 export var type = 0
 var sprite = null
+var chumValue = 0
 
 signal arrived
 var to
 var from
 var moving = false
 var speed = 240
+
+#preloaded sprites
+var fish1 = preload(\"res://118Goldeen.png\")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -31,21 +35,33 @@ func _process(delta):
 			moving = false
 			emit_signal(\"arrived\", self, from, to)
 
+#current type implications. 
+#0-99 is water tiles, 
+#100-399 is fish that clear by getting to  the top, 
+#999 is a dummy place holder
 func setType(t):
 	if(sprite == null):
 		sprite = get_child(0)
-	
 	type = t
 	if(type == 0):
 		sprite.texture.gradient.set_color(0, Color(0,0,255))
+		chumValue = 0
 	if(type == 1):
 		sprite.texture.gradient.set_color(0, Color(0,255,0))
+		chumValue = 0
 	if(type == 2):
 		sprite.texture.gradient.set_color(0, Color(255,0,0))
+		chumValue = 0
 	if(type == 3):
 		sprite.texture.gradient.set_color(0, Color(0,255,255))
+		chumValue = 0
 	if(type == 4):
 		sprite.texture.gradient.set_color(0, Color(255,255,0))
+		chumValue = 0
+	if(type == 100):
+		sprite.texture = fish1
+		sprite.scale = Vector2(0.04819277108433734940, 0.04819277108433734940)
+		chumValue = 100
 
 func getType():
 	return type
@@ -55,6 +71,12 @@ func moveTo(x, y):
 		from = Vector2(position)
 		to = Vector2(x, y)
 		moving = true
+		
+func isWater():
+	return type < 100
+
+func isFish():
+	return type >= 100 && type != 999
 
 func moveBy(x, y):
 	if(!moving):
@@ -73,7 +95,7 @@ func _to_string():
 [sub_resource type="Gradient" id=2]
 resource_local_to_scene = true
 offsets = PoolRealArray( 0 )
-colors = PoolColorArray( 0, 0.929412, 1, 1 )
+colors = PoolColorArray( 0.921569, 0, 1, 1 )
 
 [sub_resource type="GradientTexture" id=3]
 resource_local_to_scene = true
