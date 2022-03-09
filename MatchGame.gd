@@ -1,15 +1,22 @@
 extends Node2D
 
-var WaterScene = preload("res://Water.tscn")
+var TileScene = preload("res://Tile.tscn")
 var rng = RandomNumberGenerator.new()
-var sound = 0
+var inMap = false
+onready var chumUI = get_node("ChumUI")
+onready var comboUI = get_node("BarUI")
 
 export var width = 5
-export var height = 10
+export var height = 8
 var gridSize = 40 
-var randArray = [0,0,1,1,2,2,3,3,4,4,10]
-var cooldown = 0
+var comboTime = 3.5
+
 var board = []
+var chumCount = 0
+var combo = 0
+var comboTimer = 0
+
+var map = []
 
 enum direction {H, V}
 
@@ -18,18 +25,29 @@ var dummy
 
 func _ready():
 	rng.randomize()
-	$MachineNoise.play()
-	$Radar.play()
-	dummy = WaterScene.instance()
+	dummy = TileScene.instance()
 	dummy.setType(999)
 	setupBoard()
+	comboUI.updateMax(comboTime)
 	print(findMatches())
+
+	
 
 var count = 0	
 func _process(delta):
-	HandleLiftPieces()
-	clearFish()
-	clearAllMatches()
+	if (inMap == false):
+		HandleLiftPieces()
+		clearAllMatches()
+		clearAllMatches()
+		handleFishClear()
+		chumUI.updateChum(chumCount) #update the chum UI
+		if(combo > 0):
+			comboTimer -= delta
+			if(comboTimer <= 0):
+				combo = 0
+				comboTimer = 0
+				print(combo)
+			comboUI.updateValue(comboTimer)
 
 
 func setupBoard():
@@ -37,13 +55,24 @@ func setupBoard():
 		board.append([])
 		for y in range(height):
 			board[x].append(null)
-			createWater(x, y, y)
+			createTile(x, y, y, false)
 
-func clearFish():
+func destroyBoard():
 	for x in range(width):
-		if board[x][0] != null:
-			if board[x][0].getType() == 10:
-				remove(x,0)
+		for y in range(height):
+			remove(x,y)
+
+func destroyMap():
+	for x in range(10):
+		for y in range(10):
+			removeMapTile(x,y)
+
+func setupMap():
+	for x in range(10):
+		map.append([])
+		for y in range(10):
+			map[x].append(null)
+			createTile(x, y, y, true)
 
 func findMatches():
 	var out = []
@@ -52,7 +81,7 @@ func findMatches():
 		var last = -1
 		var start = Vector2(x, 0)
 		for y in range(height+1):
-			if y == height || board[x][y] == null || board[x][y].getType() != last:
+			if y == height || board[x][y] == null || board[x][y].getType() != last || board[x][y].isFish():
 				if(y - start.y >= 3 && last != 999):
 					out.append(matchData.new(direction.V, start, Vector2(x, y-1)))
 				elif(y < height):
@@ -66,7 +95,7 @@ func findMatches():
 		var last = -1
 		var start = Vector2(0, y)
 		for x in range(width+1):
-			if x == width || board[x][y] == null || board[x][y].getType() != last:
+			if x == width || board[x][y] == null || board[x][y].getType() != last || board[x][y].isFish():
 				if(x - start.x >= 3 && last != 999):
 					out.append(matchData.new(direction.H, start, Vector2(x-1, y)))
 				if x < width:
@@ -82,18 +111,23 @@ func clearAllMatches():
 	for m in matches:
 		var start = m.start.y if m.type==direction.V else m.start.x
 		var end = m.end.y if m.type==direction.V else m.end.x
+		#handle combo effect
+		if(board[m.start.x][m.start.y] != null && board[m.start.x][m.start.y].getType() < 100):
+			combo += 1
+			comboTimer = comboTime
+			print(combo)
 		for v in range(start, end+1):
 			remove(m.start.x if m.type==direction.V else v, m.start.y if m.type==direction.H else v)
-		sound = randi() % 3
+		var sound = randi() % 4
 		match sound:
 			0:
-				$WaterSound1.play()
+				$"Splash 1".play()
 			1:
-				$WaterSound2.play()
+				$"Splash 2".play()
 			2:
-				$WaterSound3.play()
+				$"Splash 3".play()
 			_:
-				$WaterSound4.play()
+				$"Splash 4".play()
 
 func HandleLiftPieces():
 	for x in range(width):
@@ -104,23 +138,58 @@ func HandleLiftPieces():
 				board[x][y] = null
 		#new
 		if board[x][height-1] == null:
-			createWater(x, height-1, 0)
+			createTile(x, height-1, 0)
 
-func createWater(x, y, offset = 0):
-	var newWater = WaterScene.instance()
-	newWater.setType(randArray[rng.randi() % randArray.size()])
-	newWater.position.x = x*gridSize 
-	newWater.position.y = (height+offset)*gridSize
-	newWater.connect("arrived", self, "onArival")
-	add_child(newWater)
-	moveTileTo(newWater, x, y)
-	return newWater
-			
+func sigmoid(x):
+	return 1 / (1 + pow(2.71828, -x))
+
+func createTile(x, y, offset = 0, maptile = false):
+	if(maptile == false):
+		var prob = sigmoid(combo/20.0) - .5
+		if(prob < 1.0/20):
+			prob = 1.0/20
+		print(prob)
+		if(rng.randf() > prob):
+			var newWater = TileScene.instance()
+			newWater.setType(rng.randi_range(0,4))
+			newWater.position.x = x*gridSize 
+			newWater.position.y = (height+offset)*gridSize
+			newWater.connect("arrived", self, "onArival")
+			add_child(newWater)
+			moveTileTo(newWater, x, y)
+			return newWater
+		else:
+			var newFish = TileScene.instance()
+			newFish.setType(100)
+			newFish.position.x = x*gridSize 
+			newFish.position.y = (height+offset)*gridSize
+			newFish.connect("arrived", self, "onArival")
+			add_child(newFish)
+			moveTileTo(newFish, x, y)
+			return newFish
+	else:
+			var newWater = TileScene.instance()
+			newWater.setType(1)
+			newWater.position.x = x*gridSize+10
+			print(x)
+			newWater.position.y = y*gridSize+10
+			print(y)
+			var gridPos = newWater.position / gridSize
+			map[gridPos.x][gridPos.y] = newWater
+			#newWater.sprite.set_position(Vector2(50, 100))
+			print(newWater.sprite.get_global_position())
+			add_child(newWater)
+			return newWater
 
 func remove(x, y):
 	remove_child(board[x][y])
 	board[x][y] = null
-	
+		
+func removeMapTile(x, y):
+	print(map)
+	remove_child(map[x][y])
+	map[x][y] = null
+
 func swapPieceRight(target):
 	if(target.x < 0 || target.x >= width-1 || target.y < 0 || target.y >= height):
 		return false
@@ -133,8 +202,6 @@ func swapPieceRight(target):
 	#set dummies
 	board[target.x][target.y] = dummy
 	board[target.x+1][target.y] = dummy
-	if cooldown > 0:
-		cooldown -= 1
 	return true
 
 class matchData:
@@ -167,17 +234,35 @@ func onArival(tile, from, to):
 	board[location.x][location.y] = tile
 	
 
+func handleFishClear():
+	for y in range(height):
+		for x in range(width):
+			if y < 3 && board[x][y] != null && board[x][y].type >= 100 && board[x][y].type <= 399:
+				chumCount += board[x][y].chumValue
+				$GrindFish.play()
+				remove(x, y)
+
 func _input(event):
 	if event.is_action_pressed("gemGame_Swap"):
-		swapPieceRight(get_local_mouse_position() / gridSize)
+		if inMap == false:
+			swapPieceRight(get_local_mouse_position() / gridSize)
 	if event.is_action("debug"):
 		print("-------------------")
 		print(board)
 		print(findMatches())
-	if event.is_action("gemGame_Remove"):
-		var target = get_local_mouse_position() / gridSize
-		if (cooldown == 0 && board[target.x][target.y] != null):
-			if board[target.x][target.y].getType() == 10:
-				remove(target.x, target.y)
-				cooldown = 10
+	if event.is_action_pressed("gemGame_Map"):
+		inMap = true
+		destroyBoard()
+		setupMap()
+		print(map)
+		
+	if event.is_action_pressed("map_space_confirm"):
+		if inMap == true:
+			destroyMap()
+			setupBoard()
+			inMap = false
 
+#map shit: Make an unselectable centre space
+#Do the Grid Maths
+#Save that to a variable
+#Then we implement distance remaining / Moves remaining Variables

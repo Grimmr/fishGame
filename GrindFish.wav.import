@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/GrindFish.wav-4d375afc4e647e676bdf72689c7dc038.sample"
+
+[deps]
+
+source_file="res://GrindFish.wav"
+dest_files=[ "res://.import/GrindFish.wav-4d375afc4e647e676bdf72689c7dc038.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0
